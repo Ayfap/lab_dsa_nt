@@ -708,12 +708,11 @@ int main() {
 
 //binomial
 
-
 #include <iostream>
-#include <cmath>
+#include <climits>
 using namespace std;
 
-// ================= BINOMIAL NODE CLASS =================
+// ================= BINOMIAL NODE =================
 class BinomialNode {
 public:
     int key;
@@ -725,16 +724,16 @@ public:
     BinomialNode(int val) {
         key = val;
         degree = 0;
-        parent = child = sibling = NULL;
+        parent = child = sibling = nullptr;
     }
 };
 
-// ================= BINOMIAL HEAP CLASS =================
+// ================= BINOMIAL HEAP =================
 class BinomialHeap {
 private:
     BinomialNode* head;
 
-    // -------- LINK TWO BINOMIAL TREES OF SAME DEGREE --------
+    // -------- LINK TWO TREES --------
     void linkTrees(BinomialNode* y, BinomialNode* z) {
         y->parent = z;
         y->sibling = z->child;
@@ -742,7 +741,7 @@ private:
         z->degree++;
     }
 
-    // -------- MERGE TWO HEAPS (MERGE ROOT LISTS BY DEGREE) --------
+    // -------- MERGE ROOT LISTS BY DEGREE --------
     BinomialNode* merge(BinomialNode* h1, BinomialNode* h2) {
         if (!h1) return h2;
         if (!h2) return h1;
@@ -752,40 +751,27 @@ private:
         BinomialNode* a = h1;
         BinomialNode* b = h2;
 
-        // Initialize head
-        if (a->degree <= b->degree) {
-            head = a;
-            a = a->sibling;
-        } else {
-            head = b;
-            b = b->sibling;
-        }
+        if (a->degree <= b->degree) { head = a; a = a->sibling; }
+        else { head = b; b = b->sibling; }
         tail = head;
 
-        // Merge rest
         while (a && b) {
-            if (a->degree <= b->degree) {
-                tail->sibling = a;
-                a = a->sibling;
-            } else {
-                tail->sibling = b;
-                b = b->sibling;
-            }
+            if (a->degree <= b->degree) { tail->sibling = a; a = a->sibling; }
+            else { tail->sibling = b; b = b->sibling; }
             tail = tail->sibling;
         }
-
         if (a) tail->sibling = a;
         else tail->sibling = b;
 
         return head;
     }
 
-    // -------- UNION TWO HEAPS --------
+    // -------- UNION HEAPS --------
     BinomialNode* unionHeaps(BinomialNode* h1, BinomialNode* h2) {
         BinomialNode* newHead = merge(h1, h2);
-        if (!newHead) return NULL;
+        if (!newHead) return nullptr;
 
-        BinomialNode* prev = NULL;
+        BinomialNode* prev = nullptr;
         BinomialNode* curr = newHead;
         BinomialNode* next = curr->sibling;
 
@@ -810,40 +796,109 @@ private:
         return newHead;
     }
 
-    // -------- FIND MIN NODE IN ROOT LIST --------
+    // -------- FIND MIN NODE --------
     BinomialNode* findMinNode() {
-        if (!head) return NULL;
-        BinomialNode* y = NULL;
+        BinomialNode* y = nullptr;
         BinomialNode* x = head;
-        int min = INT32_MAX;
+        int min = INT_MAX;
 
         while (x) {
-            if (x->key < min) {
-                min = x->key;
-                y = x;
-            }
+            if (x->key < min) { min = x->key; y = x; }
             x = x->sibling;
         }
         return y;
     }
 
-    // -------- REVERSE CHILDREN LIST (USED IN EXTRACT MIN) --------
+    // -------- REVERSE CHILD LIST --------
     BinomialNode* reverseList(BinomialNode* node) {
-        BinomialNode* prev = NULL;
+        BinomialNode* prev = nullptr;
         BinomialNode* curr = node;
         BinomialNode* next;
 
         while (curr) {
             next = curr->sibling;
             curr->sibling = prev;
-            curr->parent = NULL;
+            curr->parent = nullptr;
             prev = curr;
             curr = next;
         }
         return prev;
     }
 
-    // -------- DISPLAY ROOT LIST (FOR DEBUG/INORDER-LIKE) --------
+public:
+    BinomialHeap() { head = nullptr; }
+
+    // ================= INSERT =================
+    void insert(int key) {
+        BinomialNode* temp = new BinomialNode(key);
+        head = unionHeaps(head, temp);
+        cout << "Inserted " << key << endl;
+    }
+
+    // ================= FIND MIN =================
+    void findMin() {
+        BinomialNode* minNode = findMinNode();
+        if (!minNode) cout << "Heap is empty\n";
+        else cout << "Minimum: " << minNode->key << endl;
+    }
+
+    // ================= EXTRACT MIN =================
+    void extractMin() {
+        if (!head) { cout << "Heap empty\n"; return; }
+
+        BinomialNode* prevMin = nullptr;
+        BinomialNode* minNode = head;
+        BinomialNode* prev = nullptr;
+        BinomialNode* curr = head;
+        int min = INT_MAX;
+
+        while (curr) {
+            if (curr->key < min) { min = curr->key; minNode = curr; prevMin = prev; }
+            prev = curr;
+            curr = curr->sibling;
+        }
+
+        if (!prevMin) head = minNode->sibling;
+        else prevMin->sibling = minNode->sibling;
+
+        BinomialNode* childReversed = reverseList(minNode->child);
+        head = unionHeaps(head, childReversed);
+
+        delete minNode;
+        cout << "Extracted min\n";
+    }
+
+    // ================= MERGE HEAPS =================
+    void mergeWith(BinomialHeap& other) {
+        head = unionHeaps(head, other.head);
+        other.head = nullptr;
+        cout << "Merged heaps\n";
+    }
+
+    // ================= DECREASE KEY =================
+    void decreaseKey(BinomialNode* node, int newKey) {
+        if (!node || newKey > node->key) {
+            cout << "Invalid decrease key\n";
+            return;
+        }
+        node->key = newKey;
+        BinomialNode* y = node;
+        BinomialNode* z = y->parent;
+
+        while (z && y->key < z->key) {
+            swap(y->key, z->key);
+            y = z;
+            z = z->parent;
+        }
+    }
+
+    // ================= DELETE NODE =================
+    void deleteNode(BinomialNode* node) {
+        decreaseKey(node, INT_MIN);
+        extractMin();
+    }
+
+    // ================= DISPLAY =================
     void displayTree(BinomialNode* node, int indent = 0) {
         while (node) {
             for (int i = 0; i < indent; i++) cout << "  ";
@@ -854,131 +909,57 @@ private:
         }
     }
 
-public:
-    // -------- CONSTRUCTOR --------
-    BinomialHeap() { head = NULL; }
+    void displayHeap() { displayTree(head); }
 
-    // ================= INSERT =================
-    void insert(int key) {
-        BinomialNode* temp = new BinomialNode(key);
-        head = unionHeaps(head, temp);
-        cout << "Inserted " << key << " successfully.\n";
-    }
-
-    // ================= FIND MIN =================
-    void findMin() {
-        BinomialNode* minNode = findMinNode();
-        if (!minNode) cout << "Heap is empty!\n";
-        else cout << "Minimum element: " << minNode->key << endl;
-    }
-
-    // ================= EXTRACT MIN =================
-    void extractMin() {
-        if (!head) {
-            cout << "Heap is empty!\n";
-            return;
-        }
-
-        // Find min node and its previous
-        BinomialNode* prevMin = NULL;
-        BinomialNode* minNode = head;
-        BinomialNode* prev = NULL;
-        BinomialNode* curr = head;
-        int min = INT32_MAX;
-
-        while (curr) {
-            if (curr->key < min) {
-                min = curr->key;
-                minNode = curr;
-                prevMin = prev;
-            }
-            prev = curr;
-            curr = curr->sibling;
-        }
-
-        // Remove minNode from root list
-        if (!prevMin) head = minNode->sibling;
-        else prevMin->sibling = minNode->sibling;
-
-        // Reverse minNode's children and union
-        BinomialNode* childReversed = reverseList(minNode->child);
-        head = unionHeaps(head, childReversed);
-
-        delete minNode;
-        cout << "Minimum element extracted.\n";
-    }
-
-    // ================= MERGE WITH ANOTHER HEAP =================
-    void mergeWith(BinomialHeap& other) {
-        head = unionHeaps(head, other.head);
-        other.head = NULL;
-        cout << "Heaps merged successfully.\n";
-    }
-
-    // ================= DISPLAY HEAP =================
-    void displayHeap() {
-        if (!head) {
-            cout << "Heap is empty!\n";
-            return;
-        }
-        cout << "\nBINOMIAL HEAP STRUCTURE:\n";
-        displayTree(head);
-    }
+    // ================= GET HEAD =================
+    BinomialNode* getHead() { return head; }
 };
 
 // ================= MAIN FUNCTION =================
 int main() {
-    BinomialHeap heap1, heap2;
+    BinomialHeap heap;
     int choice, key;
+    BinomialNode* node = nullptr;
 
     while (true) {
         cout << "\n===== BINOMIAL HEAP MENU =====\n";
-        cout << "1. Insert\n";
-        cout << "2. Find Minimum\n";
-        cout << "3. Extract Minimum\n";
-        cout << "4. Display Heap\n";
-        cout << "5. Merge with Another Heap\n";
-        cout << "6. Exit\n";
-        cout << "Enter your choice: ";
+        cout << "1. Insert\n2. Find Min\n3. Extract Min\n4. Display Heap\n5. Decrease Key\n6. Exit\n";
+        cout << "Enter choice: ";
         cin >> choice;
 
-        switch (choice) {
-        case 1:
-            cout << "Enter value: ";
-            cin >> key;
-            heap1.insert(key);
-            break;
+        switch(choice) {
+            case 1:
+                cout << "Enter value: "; cin >> key;
+                heap.insert(key);
+                break;
 
-        case 2:
-            heap1.findMin();
-            break;
+            case 2:
+                heap.findMin();
+                break;
 
-        case 3:
-            heap1.extractMin();
-            break;
+            case 3:
+                heap.extractMin();
+                break;
 
-        case 4:
-            heap1.displayHeap();
-            break;
+            case 4:
+                heap.displayHeap();
+                break;
 
-        case 5:
-            cout << "Enter 3 values for second heap:\n";
-            for (int i = 0; i < 3; i++) {
-                cin >> key;
-                heap2.insert(key);
-            }
-            heap1.mergeWith(heap2);
-            break;
+            case 5:
+                cout << "Enter current node key to decrease: "; cin >> key;
+                node = heap.getHead();
+                // For simplicity, assume node is head (for real, search function needed)
+                heap.decreaseKey(node, key); // In practical use, you'd locate the node pointer
+                break;
 
-        case 6:
-            exit(0);
+            case 6:
+                exit(0);
 
-        default:
-            cout << "Invalid choice!\n";
+            default:
+                cout << "Invalid choice\n";
         }
     }
 }
-
 
 //doubly ll
 
@@ -1259,3 +1240,4 @@ int main() {
         }
     }
 }
+
