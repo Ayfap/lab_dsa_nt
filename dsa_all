@@ -1,0 +1,787 @@
+Splay TREE
+
+#include <iostream>
+using namespace std;
+
+// ================= NODE DEFINITION =================
+struct Node {
+    int key;
+    Node *left, *right;
+
+    Node(int val) {
+        key = val;
+        left = right = NULL;
+    }
+};
+
+// ================= ROTATIONS =================
+Node* rightRotate(Node* x) {
+    Node* y = x->left;
+    x->left = y->right;
+    y->right = x;
+    return y;
+}
+
+Node* leftRotate(Node* x) {
+    Node* y = x->right;
+    x->right = y->left;
+    y->left = x;
+    return y;
+}
+
+// ================= SPLAY FUNCTION =================
+Node* splay(Node* root, int key) {
+    if (root == NULL || root->key == key)
+        return root;
+
+    // Key in left subtree
+    if (key < root->key) {
+        if (root->left == NULL)
+            return root;
+
+        // Zig-Zig (Left Left)
+        if (key < root->left->key) {
+            root->left->left = splay(root->left->left, key);
+            root = rightRotate(root);
+        }
+        // Zig-Zag (Left Right)
+        else if (key > root->left->key) {
+            root->left->right = splay(root->left->right, key);
+            if (root->left->right != NULL)
+                root->left = leftRotate(root->left);
+        }
+
+        return (root->left == NULL) ? root : rightRotate(root);
+    }
+
+    // Key in right subtree
+    else {
+        if (root->right == NULL)
+            return root;
+
+        // Zag-Zig (Right Left)
+        if (key < root->right->key) {
+            root->right->left = splay(root->right->left, key);
+            if (root->right->left != NULL)
+                root->right = rightRotate(root->right);
+        }
+        // Zag-Zag (Right Right)
+        else if (key > root->right->key) {
+            root->right->right = splay(root->right->right, key);
+            root = leftRotate(root);
+        }
+
+        return (root->right == NULL) ? root : leftRotate(root);
+    }
+}
+
+// ================= INSERT =================
+Node* insert(Node* root, int key) {
+    if (root == NULL)
+        return new Node(key);
+
+    root = splay(root, key);
+
+    if (root->key == key)
+        return root;
+
+    Node* newNode = new Node(key);
+
+    if (key < root->key) {
+        newNode->right = root;
+        newNode->left = root->left;
+        root->left = NULL;
+    } else {
+        newNode->left = root;
+        newNode->right = root->right;
+        root->right = NULL;
+    }
+
+    return newNode;
+}
+
+// ================= SEARCH =================
+Node* search(Node* root, int key) {
+    return splay(root, key);
+}
+
+// ================= DELETE =================
+Node* deleteKey(Node* root, int key) {
+    if (root == NULL)
+        return NULL;
+
+    root = splay(root, key);
+
+    if (root->key != key) {
+        cout << "Key not found!\n";
+        return root;
+    }
+
+    Node* temp;
+    if (root->left == NULL) {
+        temp = root;
+        root = root->right;
+    } else {
+        temp = root;
+        root = splay(root->left, key);
+        root->right = temp->right;
+    }
+
+    delete temp;
+    return root;
+}
+
+// ================= TRAVERSALS =================
+void inorder(Node* root) {
+    if (root != NULL) {
+        inorder(root->left);
+        cout << root->key << " ";
+        inorder(root->right);
+    }
+}
+
+void preorder(Node* root) {
+    if (root != NULL) {
+        cout << root->key << " ";
+        preorder(root->left);
+        preorder(root->right);
+    }
+}
+
+// ================= MINIMUM =================
+int findMin(Node* root) {
+    if (root == NULL) return -1;
+    while (root->left != NULL)
+        root = root->left;
+    return root->key;
+}
+
+// ================= MAXIMUM =================
+int findMax(Node* root) {
+    if (root == NULL) return -1;
+    while (root->right != NULL)
+        root = root->right;
+    return root->key;
+}
+
+// ================= MAIN MENU =================
+int main() {
+    Node* root = NULL;
+    int choice, key;
+
+    while (true) {
+        cout << "\n===== SPLAY TREE MENU =====\n";
+        cout << "1. Insert\n";
+        cout << "2. Search\n";
+        cout << "3. Delete\n";
+        cout << "4. Inorder Traversal\n";
+        cout << "5. Preorder Traversal\n";
+        cout << "6. Find Minimum\n";
+        cout << "7. Find Maximum\n";
+        cout << "8. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1:
+                cout << "Enter key to insert: ";
+                cin >> key;
+                root = insert(root, key);
+                break;
+
+            case 2:
+                cout << "Enter key to search: ";
+                cin >> key;
+                root = search(root, key);
+                if (root && root->key == key)
+                    cout << "Key found & splayed to root!\n";
+                else
+                    cout << "Key not found!\n";
+                break;
+
+            case 3:
+                cout << "Enter key to delete: ";
+                cin >> key;
+                root = deleteKey(root, key);
+                break;
+
+            case 4:
+                cout << "Inorder Traversal: ";
+                inorder(root);
+                cout << endl;
+                break;
+
+            case 5:
+                cout << "Preorder Traversal: ";
+                preorder(root);
+                cout << endl;
+                break;
+
+            case 6:
+                cout << "Minimum element: " << findMin(root) << endl;
+                break;
+
+            case 7:
+                cout << "Maximum element: " << findMax(root) << endl;
+                break;
+
+            case 8:
+                exit(0);
+
+            default:
+                cout << "Invalid choice!\n";
+        }
+    }
+}
+
+
+
+
+// leftist tree 
+
+#include <iostream>
+#include <queue>
+using namespace std;
+
+// ================= NODE STRUCTURE =================
+struct Node {
+    int key;
+    int npl;          // Null Path Length
+    Node* left;
+    Node* right;
+
+    Node(int val) {
+        key = val;
+        npl = 0;
+        left = right = NULL;
+    }
+};
+
+// ================= MERGE OPERATION =================
+Node* merge(Node* h1, Node* h2) {
+    if (h1 == NULL) return h2;
+    if (h2 == NULL) return h1;
+
+    // Min-heap property
+    if (h1->key > h2->key)
+        swap(h1, h2);
+
+    h1->right = merge(h1->right, h2);
+
+    // Maintain leftist property
+    int leftNPL = (h1->left == NULL ? -1 : h1->left->npl);
+    int rightNPL = (h1->right == NULL ? -1 : h1->right->npl);
+
+    if (leftNPL < rightNPL)
+        swap(h1->left, h1->right);
+
+    h1->npl = (h1->right == NULL ? 0 : h1->right->npl + 1);
+
+    return h1;
+}
+
+// ================= INSERT =================
+Node* insert(Node* root, int key) {
+    Node* newNode = new Node(key);
+    return merge(root, newNode);
+}
+
+// ================= FIND MIN =================
+int findMin(Node* root) {
+    if (root == NULL) {
+        cout << "Heap is empty!\n";
+        return -1;
+    }
+    return root->key;
+}
+
+// ================= DELETE MIN =================
+Node* deleteMin(Node* root) {
+    if (root == NULL) {
+        cout << "Heap is empty!\n";
+        return NULL;
+    }
+
+    Node* leftHeap = root->left;
+    Node* rightHeap = root->right;
+    delete root;
+
+    return merge(leftHeap, rightHeap);
+}
+
+// ================= INORDER TRAVERSAL =================
+void inorder(Node* root) {
+    if (root != NULL) {
+        inorder(root->left);
+        cout << root->key << " ";
+        inorder(root->right);
+    }
+}
+
+// ================= LEVEL ORDER TRAVERSAL =================
+void levelOrder(Node* root) {
+    if (root == NULL) return;
+
+    queue<Node*> q;
+    q.push(root);
+
+    while (!q.empty()) {
+        Node* temp = q.front();
+        q.pop();
+        cout << temp->key << " ";
+
+        if (temp->left)
+            q.push(temp->left);
+        if (temp->right)
+            q.push(temp->right);
+    }
+}
+
+// ================= MAIN MENU =================
+int main() {
+    Node* root = NULL;
+    int choice, value;
+
+    while (true) {
+        cout << "\n===== LEFTIST TREE MENU =====\n";
+        cout << "1. Insert\n";
+        cout << "2. Delete Min\n";
+        cout << "3. Find Min\n";
+        cout << "4. Inorder Traversal\n";
+        cout << "5. Level Order Traversal\n";
+        cout << "6. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1:
+                cout << "Enter value: ";
+                cin >> value;
+                root = insert(root, value);
+                break;
+
+            case 2:
+                root = deleteMin(root);
+                cout << "Minimum deleted.\n";
+                break;
+
+            case 3:
+                cout << "Minimum element: " << findMin(root) << endl;
+                break;
+
+            case 4:
+                cout << "Inorder Traversal: ";
+                inorder(root);
+                cout << endl;
+                break;
+
+            case 5:
+                cout << "Level Order Traversal: ";
+                levelOrder(root);
+                cout << endl;
+                break;
+
+            case 6:
+                exit(0);
+
+            default:
+                cout << "Invalid choice!\n";
+        }
+    }
+}
+
+
+
+//skew heap
+
+#include <iostream>
+#include <queue>
+using namespace std;
+
+// ================= NODE STRUCTURE =================
+struct Node {
+    int key;
+    Node* left;
+    Node* right;
+
+    Node(int val) {
+        key = val;
+        left = right = NULL;
+    }
+};
+
+// ================= MERGE OPERATION =================
+Node* merge(Node* h1, Node* h2) {
+    if (h1 == NULL) return h2;
+    if (h2 == NULL) return h1;
+
+    // Min-heap property
+    if (h1->key > h2->key)
+        swap(h1, h2);
+
+    // Always swap children after merge
+    Node* temp = h1->left;
+    h1->left = merge(h1->right, h2);
+    h1->right = temp;
+
+    return h1;
+}
+
+// ================= INSERT =================
+Node* insert(Node* root, int key) {
+    Node* newNode = new Node(key);
+    return merge(root, newNode);
+}
+
+// ================= FIND MIN =================
+int findMin(Node* root) {
+    if (root == NULL) {
+        cout << "Heap is empty!\n";
+        return -1;
+    }
+    return root->key;
+}
+
+// ================= DELETE MIN =================
+Node* deleteMin(Node* root) {
+    if (root == NULL) {
+        cout << "Heap is empty!\n";
+        return NULL;
+    }
+
+    Node* leftHeap = root->left;
+    Node* rightHeap = root->right;
+    delete root;
+
+    return merge(leftHeap, rightHeap);
+}
+
+// ================= INORDER TRAVERSAL =================
+void inorder(Node* root) {
+    if (root != NULL) {
+        inorder(root->left);
+        cout << root->key << " ";
+        inorder(root->right);
+    }
+}
+
+// ================= LEVEL ORDER TRAVERSAL =================
+void levelOrder(Node* root) {
+    if (root == NULL) return;
+
+    queue<Node*> q;
+    q.push(root);
+
+    while (!q.empty()) {
+        Node* temp = q.front();
+        q.pop();
+        cout << temp->key << " ";
+
+        if (temp->left)
+            q.push(temp->left);
+        if (temp->right)
+            q.push(temp->right);
+    }
+}
+
+// ================= MAIN MENU =================
+int main() {
+    Node* root = NULL;
+    int choice, value;
+
+    while (true) {
+        cout << "\n===== SKEW HEAP MENU =====\n";
+        cout << "1. Insert\n";
+        cout << "2. Delete Min\n";
+        cout << "3. Find Min\n";
+        cout << "4. Inorder Traversal\n";
+        cout << "5. Level Order Traversal\n";
+        cout << "6. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1:
+                cout << "Enter value: ";
+                cin >> value;
+                root = insert(root, value);
+                break;
+
+            case 2:
+                root = deleteMin(root);
+                cout << "Minimum deleted.\n";
+                break;
+
+            case 3:
+                cout << "Minimum element: " << findMin(root) << endl;
+                break;
+
+            case 4:
+                cout << "Inorder Traversal: ";
+                inorder(root);
+                cout << endl;
+                break;
+
+            case 5:
+                cout << "Level Order Traversal: ";
+                levelOrder(root);
+                cout << endl;
+                break;
+
+            case 6:
+                exit(0);
+
+            default:
+                cout << "Invalid choice!\n";
+        }
+    }
+}
+
+
+
+//binomial heap
+
+#include <iostream>
+#include <climits>
+using namespace std;
+
+// ================= NODE STRUCTURE =================
+struct Node {
+    int key;
+    int degree;
+    Node* parent;
+    Node* child;
+    Node* sibling;
+
+    Node(int k) {
+        key = k;
+        degree = 0;
+        parent = child = sibling = NULL;
+    }
+};
+
+// ================= LINK TWO BINOMIAL TREES =================
+void linkTrees(Node* y, Node* z) {
+    y->parent = z;
+    y->sibling = z->child;
+    z->child = y;
+    z->degree++;
+}
+
+// ================= MERGE ROOT LISTS =================
+Node* mergeRootLists(Node* h1, Node* h2) {
+    if (!h1) return h2;
+    if (!h2) return h1;
+
+    Node* head = NULL;
+    Node* tail = NULL;
+
+    if (h1->degree <= h2->degree) {
+        head = h1;
+        h1 = h1->sibling;
+    } else {
+        head = h2;
+        h2 = h2->sibling;
+    }
+    tail = head;
+
+    while (h1 && h2) {
+        if (h1->degree <= h2->degree) {
+            tail->sibling = h1;
+            h1 = h1->sibling;
+        } else {
+            tail->sibling = h2;
+            h2 = h2->sibling;
+        }
+        tail = tail->sibling;
+    }
+
+    tail->sibling = (h1 ? h1 : h2);
+    return head;
+}
+
+// ================= UNION (MERGE HEAPS) =================
+Node* unionHeaps(Node* h1, Node* h2) {
+    Node* newHead = mergeRootLists(h1, h2);
+    if (!newHead) return NULL;
+
+    Node* prev = NULL;
+    Node* curr = newHead;
+    Node* next = curr->sibling;
+
+    while (next != NULL) {
+        if ((curr->degree != next->degree) ||
+            (next->sibling && next->sibling->degree == curr->degree)) {
+            prev = curr;
+            curr = next;
+        }
+        else {
+            if (curr->key <= next->key) {
+                curr->sibling = next->sibling;
+                linkTrees(next, curr);
+            } else {
+                if (prev == NULL)
+                    newHead = next;
+                else
+                    prev->sibling = next;
+
+                linkTrees(curr, next);
+                curr = next;
+            }
+        }
+        next = curr->sibling;
+    }
+    return newHead;
+}
+
+// ================= INSERT =================
+Node* insert(Node* heap, int key) {
+    Node* newNode = new Node(key);
+    return unionHeaps(heap, newNode);
+}
+
+// ================= FIND MIN =================
+Node* findMin(Node* heap) {
+    if (!heap) return NULL;
+
+    int minValue = INT_MAX;
+    Node* minNode = NULL;
+    Node* temp = heap;
+
+    while (temp) {
+        if (temp->key < minValue) {
+            minValue = temp->key;
+            minNode = temp;
+        }
+        temp = temp->sibling;
+    }
+    return minNode;
+}
+
+// ================= REVERSE CHILD LIST =================
+Node* reverseList(Node* node) {
+    Node* prev = NULL;
+    Node* curr = node;
+    Node* next;
+
+    while (curr) {
+        next = curr->sibling;
+        curr->sibling = prev;
+        curr->parent = NULL;
+        prev = curr;
+        curr = next;
+    }
+    return prev;
+}
+
+// ================= DELETE MIN =================
+Node* deleteMin(Node* heap) {
+    if (!heap) {
+        cout << "Heap is empty!\n";
+        return NULL;
+    }
+
+    Node* minPrev = NULL;
+    Node* minNode = heap;
+    Node* prev = NULL;
+    Node* curr = heap;
+
+    int minValue = curr->key;
+
+    while (curr) {
+        if (curr->key < minValue) {
+            minValue = curr->key;
+            minNode = curr;
+            minPrev = prev;
+        }
+        prev = curr;
+        curr = curr->sibling;
+    }
+
+    if (minPrev)
+        minPrev->sibling = minNode->sibling;
+    else
+        heap = minNode->sibling;
+
+    Node* childHeap = reverseList(minNode->child);
+    delete minNode;
+
+    return unionHeaps(heap, childHeap);
+}
+
+// ================= DISPLAY HEAP =================
+void displayHeap(Node* heap) {
+    if (!heap) {
+        cout << "Heap is empty!\n";
+        return;
+    }
+
+    Node* curr = heap;
+    while (curr) {
+        cout << "B" << curr->degree << ": ";
+        Node* child = curr->child;
+        cout << curr->key << " ";
+
+        if (child) {
+            cout << "[ ";
+            while (child) {
+                cout << child->key << " ";
+                child = child->sibling;
+            }
+            cout << "]";
+        }
+        cout << endl;
+        curr = curr->sibling;
+    }
+}
+
+// ================= MAIN MENU =================
+int main() {
+    Node* heap = NULL;
+    int choice, value;
+
+    while (true) {
+        cout << "\n===== BINOMIAL HEAP MENU =====\n";
+        cout << "1. Insert\n";
+        cout << "2. Find Minimum\n";
+        cout << "3. Delete Minimum\n";
+        cout << "4. Display Heap\n";
+        cout << "5. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1:
+                cout << "Enter value: ";
+                cin >> value;
+                heap = insert(heap, value);
+                break;
+
+            case 2: {
+                Node* minNode = findMin(heap);
+                if (minNode)
+                    cout << "Minimum element: " << minNode->key << endl;
+                else
+                    cout << "Heap is empty!\n";
+                break;
+            }
+
+            case 3:
+                heap = deleteMin(heap);
+                cout << "Minimum deleted.\n";
+                break;
+
+            case 4:
+                cout << "Binomial Heap Structure:\n";
+                displayHeap(heap);
+                break;
+
+            case 5:
+                exit(0);
+
+            default:
+                cout << "Invalid choice!\n";
+        }
+    }
+}
+
