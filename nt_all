@@ -1,0 +1,262 @@
+// leaky bucket
+
+
+#include <iostream>
+#include <queue>
+using namespace std;
+
+class LeakyBucket {
+private:
+    int bucketSize;   // Maximum capacity of the bucket
+    int leakRate;     // Rate at which packets are sent (per time unit)
+    int currentLoad;  // Current number of packets in the bucket
+
+public:
+    LeakyBucket(int size, int rate) {
+        bucketSize = size;
+        leakRate = rate;
+        currentLoad = 0;
+    }
+
+    void addPackets(int packets) {
+        cout << "\nIncoming packets: " << packets << endl;
+
+        if (packets + currentLoad <= bucketSize) {
+            currentLoad += packets;
+        } else {
+            int dropped = (packets + currentLoad) - bucketSize;
+            cout << "Packets dropped: " << dropped << endl;
+            currentLoad = bucketSize;
+        }
+        sendPackets();
+    }
+
+    void sendPackets() {
+        int sent = min(leakRate, currentLoad);
+        cout << "Packets sent: " << sent << endl;
+        currentLoad -= sent;
+        cout << "Packets remaining in bucket: " << currentLoad << endl;
+    }
+};
+
+int main() {
+    int bucketCapacity, leakRate, n;
+
+    cout << "Enter bucket capacity: ";
+    cin >> bucketCapacity;
+
+    cout << "Enter leak rate (packets per time unit): ";
+    cin >> leakRate;
+
+    LeakyBucket lb(bucketCapacity, leakRate);
+
+    cout << "Enter number of time units to simulate: ";
+    cin >> n;
+
+    for (int i = 0; i < n; i++) {
+        int incoming;
+        cout << "\nTime unit " << i+1 << ", enter incoming packets: ";
+        cin >> incoming;
+        lb.addPackets(incoming);
+    }
+
+    return 0;
+}
+
+
+//cdma
+
+
+
+#include <iostream>
+#include <vector>
+using namespace std;
+
+// Generate Hadamard matrix recursively
+vector<vector<int>> generateHadamard(int n) {
+    if (n == 1) return {{1}};
+    vector<vector<int>> H = generateHadamard(n / 2);
+    vector<vector<int>> newH(n, vector<int>(n));
+
+    for (int i = 0; i < n / 2; i++) {
+        for (int j = 0; j < n / 2; j++) {
+            newH[i][j] = H[i][j];
+            newH[i][j + n / 2] = H[i][j];
+            newH[i + n / 2][j] = H[i][j];
+            newH[i + n / 2][j + n / 2] = -H[i][j];
+        }
+    }
+    return newH;
+}
+
+// Encode data using the spreading code
+vector<int> encode(const vector<int>& data, const vector<int>& code) {
+    vector<int> encoded;
+    for (int bit : data) {
+        for (int c : code) {
+            encoded.push_back(bit == 1 ? c : -c);
+        }
+    }
+    return encoded;
+}
+
+// Combine all encoded signals
+vector<int> combineSignals(const vector<vector<int>>& signals) {
+    vector<int> combined(signals[0].size(), 0);
+    for (auto &sig : signals) {
+        for (size_t i = 0; i < sig.size(); i++) {
+            combined[i] += sig[i];
+        }
+    }
+    return combined;
+}
+
+// Decode combined signal for a user
+vector<int> decode(const vector<int>& combined, const vector<int>& code) {
+    vector<int> decoded;
+    int n = code.size();
+    for (size_t i = 0; i < combined.size(); i += n) {
+        int sum = 0;
+        for (int j = 0; j < n; j++) {
+            sum += combined[i + j] * code[j];
+        }
+        decoded.push_back(sum > 0 ? 1 : 0);
+    }
+    return decoded;
+}
+
+int main() {
+    int numStations = 5;
+    int dataLen;
+
+    cout << "Enter length of data for each station: ";
+    cin >> dataLen;
+
+    // Generate Hadamard matrix of size 8 (next power of 2 >= 5)
+    int H_size = 8;
+    vector<vector<int>> hadamard = generateHadamard(H_size);
+
+    cout << "\nAssigned orthogonal codes to 5 stations:\n";
+    for (int i = 0; i < numStations; i++) {
+        cout << "Station " << i + 1 << " code: ";
+        for (int j = 0; j < H_size; j++) cout << hadamard[i][j] << " ";
+        cout << endl;
+    }
+
+    vector<vector<int>> stationData(numStations, vector<int>(dataLen));
+    vector<vector<int>> encodedSignals(numStations);
+
+    // Input data for each station
+    for (int i = 0; i < numStations; i++) {
+        cout << "\nEnter binary data (0/1) for Station " << i + 1 << ": ";
+        for (int j = 0; j < dataLen; j++) cin >> stationData[i][j];
+        encodedSignals[i] = encode(stationData[i], hadamard[i]);
+    }
+
+    // Combine all encoded signals
+    vector<int> combinedSignal = combineSignals(encodedSignals);
+
+    cout << "\nCombined Signal: ";
+    for (int s : combinedSignal) cout << s << " ";
+    cout << endl;
+
+    // Decode data for all stations
+    for (int i = 0; i < numStations; i++) {
+        vector<int> decoded = decode(combinedSignal, hadamard[i]);
+        cout << "Decoded data for Station " << i + 1 << ": ";
+        for (int d : decoded) cout << d << " ";
+        cout << endl;
+    }
+
+    return 0;
+}
+
+
+
+
+// packet tracer
+
+
+Access a web page hosted on a local web server.
+Steps:
+1.	Place 1 web server, 1 switch, and 1 PC.
+2.	Connect them via the switch.
+3.	Assign:
+o	Web Server: 192.168.0.10
+o	PC: 192.168.0.2 (Gateway not needed in this LAN)
+4.	On the web server, configure the HTTP service (default is ON).
+5.	On the PC, open the Web Browser and enter:
+6.	http://192.168.0.10
+7.	You should see a test page.
+
+Connect two LANs (representing two branch offices) using a WAN link (serial connection) between routers, and enable full communication between PCs in each LAN.
+Devices Required:
+•	2 Routers
+•	2 Switches
+•	4 PCs (2 at each site)
+•	Serial cable
+•	Ethernet cables
+
+Device	Interface	IP Address	Subnet Mask
+PC1	NIC	192.168.1.2	255.255.255.0
+PC2	NIC	192.168.1.3	255.255.255.0
+Router1	G0/0	192.168.1.1	255.255.255.0
+Router1	Serial0/0/0	10.0.0.1	255.0.0.0
+Router2	Serial0/0/0	10.0.0.2	255.0.0.0
+Router2	G0/0	192.168.2.1	255.255.255.0
+PC3	NIC	192.168.2.2	255.255.255.0
+PC4	NIC	192.168.2.3	255.255.255.0
+1. Setup the Devices
+•	Place 2 routers, 2 switches, and 4 PCs in Packet Tracer.
+•	Connect:
+o	PC1 and PC2 to Switch1
+o	PC3 and PC4 to Switch2
+o	Switch1 to Router1’s GigabitEthernet0/0
+o	Switch2 to Router2’s GigabitEthernet0/0
+o	Connect Router1 Serial0/0/0 to Router2 Serial0/0/0 with a Serial DCE cable
+2. Assign IP Addresses
+•	Configure IPs on PCs via the desktop > IP Configuration.
+•	Configure router interfaces using the CLI:
+Router1 CLI:
+enable
+configure terminal
+interface gig0/0
+ip address 192.168.1.1 255.255.255.0
+no shutdown
+exit
+interface serial0/0/0
+ip address 10.0.0.1 255.0.0.0
+clock rate 64000
+no shutdown
+exit
+Router2 CLI:
+enable
+configure terminal
+interface gig0/0
+ip address 192.168.2.1 255.255.255.0
+no shutdown
+exit
+interface serial0/0/0
+ip address 10.0.0.2 255.0.0.0
+no shutdown
+exit
+3. Configure Static Routing (So the routers know about each other's LANs)
+On Router1:
+ip route 192.168.2.0 255.255.255.0 10.0.0.2
+On Router2:
+ip route 192.168.1.0 255.255.255.0 10.0.0.1
+4. Set Default Gateway on PCs
+PC1 and PC2:
+•	Default Gateway: 192.168.1.1
+PC3 and PC4:
+•	Default Gateway: 192.168.2.1
+5. Test Connectivity
+•	Open PC1 or PC2 and run:
+•	ping 192.168.2.2
+ping 192.168.2.3
+
+
+
+
+
+//
